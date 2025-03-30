@@ -4,7 +4,7 @@ A command-line tool that automatically syncs latest Garmin activity to Strava.
 
 ## Setup
 
-1. https://docs.astral.sh/uv/getting-started/installation/ `uv` 
+1. [Instal `uv`](https://docs.astral.sh/uv/getting-started/installation/)
 
 2. Install the required dependencies:
 ```bash
