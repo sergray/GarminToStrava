@@ -1,0 +1,20 @@
+[project]
+name = "garmintostrava"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click",
+    "garminconnect",
+    "python-dotenv",
+    "requests",
+    "stravalib",
+    "webbrowser-open>=0.3.0",
+    "flask",
+]
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+]
