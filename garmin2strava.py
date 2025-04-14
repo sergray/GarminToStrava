@@ -76,10 +76,31 @@ def update_env_file(token_data):
                 f.write(line)
 
 
+def sync_activity(garmin, activity):
+    activity_id = activity["activityId"]
+
+    # Download activity data
+    activity_data = garmin.download_activity(
+        activity_id, dl_fmt=Garmin.ActivityDownloadFormat.TCX
+    )
+
+    # Upload to Strava
+    strava = get_strava_client()
+
+    upload = strava.upload_activity(
+        activity_file=activity_data,
+        data_type="tcx",
+        name=activity.get("activityName", "Garmin Activity"),
+        description=f"Synced from Garmin Connect on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} with https://bit.ly/garmin2strava",
+    )
+
+    return activity_id
+
+
 @click.command()
-@click.option("--limit", default=1, help="Number of activities to fetch")
+@click.option("--limit", default=1, help="Number of activities to sync")
 def sync(limit):
-    """Sync the latest Garmin activity to Strava."""
+    """Sync last N (defined by limit) Garmin activities to Strava."""
     try:
         # Get latest activity from Garmin
         garmin = get_garmin_client()
@@ -89,25 +110,10 @@ def sync(limit):
             click.echo("No activities found in Garmin")
             return
 
-        latest_activity = activities[0]
-        activity_id = latest_activity["activityId"]
-
-        # Download activity data
-        activity_data = garmin.download_activity(
-            activity_id, dl_fmt=Garmin.ActivityDownloadFormat.TCX
-        )
-
-        # Upload to Strava
-        strava = get_strava_client()
-
-        upload = strava.upload_activity(
-            activity_file=activity_data,
-            data_type="tcx",
-            name=latest_activity.get("activityName", "Garmin Activity"),
-            description=f"Synced from Garmin Connect on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        )
-
-        click.echo(f"Successfully synced activity {activity_id} to Strava")
+        # Reverse the activities list to sync the latest first
+        for activity in activities[-limit::-1]:
+            activity_id = sync_activity(garmin, activity)
+            click.echo(f"Successfully synced activity {activity_id} to Strava")
 
     except Exception as e:
         click.echo(f"Error during sync: {str(e)}", err=True)
