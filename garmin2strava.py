@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import os
-import click
 import logging
+import os
+import time
 from datetime import datetime
+
+import click
 from dotenv import load_dotenv
 from garminconnect import Garmin
 from stravalib.client import Client
@@ -76,13 +78,17 @@ def update_env_file(token_data):
                 f.write(line)
 
 
-def sync_activity(garmin, activity):
+def sync_activity(garmin, activity, dry_run=False, max_attempts=3):
     activity_id = activity["activityId"]
 
     # Download activity data
     activity_data = garmin.download_activity(
         activity_id, dl_fmt=Garmin.ActivityDownloadFormat.TCX
     )
+
+    if dry_run:
+        click.echo(f"[DRY RUN] Would upload activity: {activity.get('activityName', 'Garmin Activity')}")
+        return activity_id
 
     # Upload to Strava
     strava = get_strava_client()
@@ -94,12 +100,32 @@ def sync_activity(garmin, activity):
         description=f"Synced from Garmin Connect on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} with https://bit.ly/garmin2strava",
     )
 
-    return activity_id
+    # Wait for the upload to complete and get the activity ID
+    attempts = 0
+    strava_activity_id = None
+    while attempts < max_attempts:
+        upload.poll()
+        if upload.activity_id:
+            strava_activity_id = upload.activity_id
+            activity_url = f"https://www.strava.com/activities/{strava_activity_id}"
+            click.echo(f"Activity URL: {activity_url}")
+            break
+        elif upload.error:
+            click.echo(f"Upload status error: {upload.error}", err=True)
+            break
+        time.sleep(1)
+        attempts += 1
+    else:
+        click.echo(f"Failed to get upload status after {max_attempts} attempts", err=True)
+        return None
+
+    return strava_activity_id
 
 
 @click.command()
 @click.option("--limit", default=1, help="Number of activities to sync")
-def sync(limit):
+@click.option("--dry-run", is_flag=True, help="Download activities but don't upload to Strava")
+def sync(limit, dry_run):
     """Sync last N (defined by limit) Garmin activities to Strava."""
     try:
         # Get latest activity from Garmin
@@ -110,10 +136,17 @@ def sync(limit):
             click.echo("No activities found in Garmin")
             return
 
-        # Reverse the activities list to sync the latest first
-        for activity in activities[-limit::-1]:
-            activity_id = sync_activity(garmin, activity)
-            click.echo(f"Successfully synced activity {activity_id} to Strava")
+        if dry_run:
+            click.echo("Running in dry-run mode. No activities will be uploaded to Strava.")
+            
+        # Process the activities
+        for activity in reversed(activities[:limit]):
+            activity_id = sync_activity(garmin, activity, dry_run=dry_run)
+            
+            if dry_run:
+                click.echo(f"[DRY RUN] Downloaded Garmin activity {activity_id}")
+            else:
+                click.echo(f"Successfully synced Garmin activity {activity_id} to Strava")
 
     except Exception as e:
         click.echo(f"Error during sync: {str(e)}", err=True)
