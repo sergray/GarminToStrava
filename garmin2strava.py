@@ -80,6 +80,65 @@ def update_env_file(token_data):
                 f.write(line)
 
 
+def upload_file_to_strava(filepath, dry_run=False, max_attempts=3):
+    """Upload a single TCX file to Strava."""
+    if not os.path.exists(filepath):
+        click.echo(f"Error: File not found: {filepath}", err=True)
+        return None
+        
+    if not filepath.lower().endswith('.tcx'):
+        click.echo(f"Warning: File {filepath} is not a TCX file, but will attempt upload anyway")
+    
+    # Extract activity name from filename
+    filename = os.path.basename(filepath)
+    # Remove extension and replace underscores with spaces for better readability
+    activity_name = os.path.splitext(filename)[0].replace('_', ' ')
+    
+    if dry_run:
+        click.echo(f"[DRY RUN] Would upload file: {filepath} as '{activity_name}'")
+        return filepath
+    
+    try:
+        # Read file content
+        with open(filepath, 'rb') as f:
+            activity_data = f.read()
+        
+        # Upload to Strava
+        strava = get_strava_client()
+        
+        upload = strava.upload_activity(
+            activity_file=activity_data,
+            data_type="tcx",
+            name=activity_name,
+            description=f"Uploaded from local file on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} with https://bit.ly/garmin2strava",
+        )
+        
+        # Wait for the upload to complete and get the activity ID
+        attempts = 0
+        strava_activity_id = None
+        while attempts < max_attempts:
+            upload.poll()
+            if upload.activity_id:
+                strava_activity_id = upload.activity_id
+                activity_url = f"https://www.strava.com/activities/{strava_activity_id}"
+                click.echo(f"Activity URL: {activity_url}")
+                break
+            elif upload.error:
+                click.echo(f"Upload status error: {upload.error}", err=True)
+                break
+            time.sleep(1)
+            attempts += 1
+        else:
+            click.echo(f"Failed to get upload status after {max_attempts} attempts", err=True)
+            return None
+        
+        return strava_activity_id
+        
+    except Exception as e:
+        click.echo(f"Error uploading file {filepath}: {str(e)}", err=True)
+        return None
+
+
 def sync_activity(garmin, activity, dry_run=False, max_attempts=3):
     activity_id = activity["activityId"]
 
@@ -245,6 +304,47 @@ def download(limit, output_dir):
         raise
 
 
+@click.command()
+@click.argument('files', nargs=-1, required=True)
+@click.option("--dry-run", is_flag=True, help="Show what would be uploaded but don't actually upload")
+def upload(files, dry_run):
+    """Upload TCX activity files to Strava."""
+    if not files:
+        click.echo("Error: No files specified", err=True)
+        return
+        
+    if dry_run:
+        click.echo("Running in dry-run mode. No files will be uploaded to Strava.")
+    
+    successful_uploads = 0
+    failed_uploads = 0
+    
+    for filepath in files:
+        click.echo(f"Processing file: {filepath}")
+        
+        result = upload_file_to_strava(filepath, dry_run=dry_run)
+        
+        if result:
+            successful_uploads += 1
+            if dry_run:
+                click.echo(f"[DRY RUN] Would upload: {filepath}")
+            else:
+                click.echo(f"Successfully uploaded: {filepath}")
+        else:
+            failed_uploads += 1
+            click.echo(f"Failed to upload: {filepath}")
+    
+    click.echo(f"\nUpload summary:")
+    if dry_run:
+        click.echo(f"[DRY RUN] Would upload {successful_uploads} files")
+        if failed_uploads > 0:
+            click.echo(f"[DRY RUN] Would fail to upload {failed_uploads} files")
+    else:
+        click.echo(f"Successfully uploaded: {successful_uploads} files")
+        if failed_uploads > 0:
+            click.echo(f"Failed to upload: {failed_uploads} files")
+
+
 @click.group()
 def cli():
     """Garmin to Strava CLI"""
@@ -252,6 +352,7 @@ def cli():
 
 cli.add_command(sync)
 cli.add_command(download)
+cli.add_command(upload)
 
 if __name__ == "__main__":
     cli()
