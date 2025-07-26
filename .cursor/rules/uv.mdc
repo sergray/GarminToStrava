@@ -1,0 +1,8 @@
+---
+description: Manage Python packages with uv
+globs:
+alwaysApply: false
+---
+Use uv for Python package management. Make sure packages are kept in @pyproject.toml. 
+
+See https://docs.astral.sh/uv/ for more information about uv if needed.

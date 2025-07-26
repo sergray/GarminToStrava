@@ -12,9 +12,13 @@ dependencies = [
     "stravalib",
     "webbrowser-open>=0.3.0",
     "flask",
+    "questionary",
 ]
 
 [dependency-groups]
 dev = [
     "ipdb>=0.13.13",
 ]
+
+[project.scripts]
+g2s = "garmin2strava:sync"
