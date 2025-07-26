@@ -1,7 +1,7 @@
 [project]
-name = "garmintostrava"
+name = "garmin2strava"
 version = "0.1.0"
-description = "Add your description here"
+description = "Garmin to Strava CLI"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -21,4 +21,4 @@ dev = [
 ]
 
 [project.scripts]
-g2s = "garmin2strava:sync"
+g2s = "garmin2strava"

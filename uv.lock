@@ -166,20 +166,7 @@ wheels = [
 ]
 
 [[package]]
-name = "garminconnect"
-version = "0.2.25"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "garth" },
-    { name = "withings-sync" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/75/1f/55546c8c8b765433892373c3c1d46c9e3289a4b6f96981b52c586a529fa9/garminconnect-0.2.25.tar.gz", hash = "sha256:0b20ce70e78f1bec5d45c0b9fd141553f117b752c2daba0cd34187a8ab09caff", size = 144231 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/44/94c8a0c68659b820fd41e991cd5771199e867d4deda9b2ced46510b73e68/garminconnect-0.2.25-py3-none-any.whl", hash = "sha256:8285311851fbcfc0eced6d14cdcbcf8c00197843ac4e9ac51921c9bf28899a1c", size = 80868 },
-]
-
-[[package]]
-name = "garmintostrava"
+name = "garmin2strava"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -212,6 +199,19 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "ipdb", specifier = ">=0.13.13" }]
+
+[[package]]
+name = "garminconnect"
+version = "0.2.25"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "garth" },
+    { name = "withings-sync" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/75/1f/55546c8c8b765433892373c3c1d46c9e3289a4b6f96981b52c586a529fa9/garminconnect-0.2.25.tar.gz", hash = "sha256:0b20ce70e78f1bec5d45c0b9fd141553f117b752c2daba0cd34187a8ab09caff", size = 144231 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dc/44/94c8a0c68659b820fd41e991cd5771199e867d4deda9b2ced46510b73e68/garminconnect-0.2.25-py3-none-any.whl", hash = "sha256:8285311851fbcfc0eced6d14cdcbcf8c00197843ac4e9ac51921c9bf28899a1c", size = 80868 },
+]
 
 [[package]]
 name = "garth"
