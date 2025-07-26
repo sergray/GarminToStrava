@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCX Activity Visualizer</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Leaflet Awesome Markers CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .upload-box:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+
+        .upload-box.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .activities-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .activity-item:hover {
+            background: #e3f2fd;
+            border-color: #007bff;
+        }
+
+        .activity-item.hidden {
+            opacity: 0.5;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .activity-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .activity-details {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .activity-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .legend {
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .stats-section {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 300px;
+            }
+            
+            .map-container {
+                height: calc(100vh - 300px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="header">
+                <h1><i class="fas fa-map-marked-alt"></i> TCX Visualizer</h1>
+                <p>Upload and visualize your Garmin TCX activity files</p>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p><strong>Drop TCX files here</strong></p>
+                    <p>or <button class="btn" onclick="document.getElementById('fileInput').click()">Browse Files</button></p>
+                    <input type="file" id="fileInput" class="file-input" multiple accept=".tcx" />
+                </div>
+            </div>
+
+            <div class="stats-section" id="statsSection" style="display: none;">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Statistics
+                </div>
+                <div id="statsContent"></div>
+            </div>
+
+            <div class="legend">
+                <div class="section-title">
+                    <i class="fas fa-palette"></i>
+                    Activity Types
+                </div>
+                <div class="legend-item">
+                    <div class="activity-icon" style="background-color: #e74c3c;">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <span>Running</span>
+                </div>
+                <div class="legend-item">
+                    <div class="activity-icon" style="background-color: #3498db;">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                    <span>Cycling</span>
+                </div>
+                <div class="legend-item">
+                    <div class="activity-icon" style="background-color: #2ecc71;">
+                        <i class="fas fa-walking"></i>
+                    </div>
+                    <span>Walking</span>
+                </div>
+                <div class="legend-item">
+                    <div class="activity-icon" style="background-color: #1abc9c;">
+                        <i class="fas fa-swimmer"></i>
+                    </div>
+                    <span>Swimming</span>
+                </div>
+                <div class="legend-item">
+                    <div class="activity-icon" style="background-color: #9b59b6;">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <span>Other</span>
+                </div>
+            </div>
+
+            <div class="activities-section">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    Activities (<span id="activityCount">0</span>)
+                </div>
+                <div class="activity-list" id="activityList">
+                    <div class="loading" id="emptyState">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Upload TCX files to get started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Awesome Markers JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
+
+    <!-- Fast XML Parser for TCX parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/fast-xml-parser@4.3.2/dist/fxp.min.js"></script>
+
+    <script src="tcx-visualizer.js"></script>
+</body>
+</html> 

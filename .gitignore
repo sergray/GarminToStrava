@@ -11,3 +11,7 @@ wheels/
 
 # Environment variables with secrets
 .env
+.swp
+.ruff_cache
+downloads/
+.DS_Store
