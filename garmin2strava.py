@@ -110,7 +110,7 @@ def upload_file_to_strava(filepath, dry_run=False, max_attempts=3):
             activity_file=activity_data,
             data_type="tcx",
             name=activity_name,
-            description=f"Uploaded from local file on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} with https://bit.ly/garmin2strava",
+            description=f"Uploaded from local file with https://bit.ly/garmin2strava",
         )
         
         # Wait for the upload to complete and get the activity ID
@@ -158,7 +158,7 @@ def sync_activity(garmin, activity, dry_run=False, max_attempts=3):
         activity_file=activity_data,
         data_type="tcx",
         name=activity.get("activityName", "Garmin Activity"),
-        description=f"Synced from Garmin Connect on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} with https://bit.ly/garmin2strava",
+        description=f"Synced from Garmin Connect with https://bit.ly/garmin2strava",
     )
 
     # Wait for the upload to complete and get the activity ID
