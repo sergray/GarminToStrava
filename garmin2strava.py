@@ -81,21 +81,49 @@ def update_env_file(token_data):
 
 
 def upload_file_to_strava(filepath, dry_run=False, max_attempts=3):
-    """Upload a single TCX file to Strava."""
+    """Upload a single activity file to Strava (TCX/GPX/FIT, optionally gzipped)."""
     if not os.path.exists(filepath):
         click.echo(f"Error: File not found: {filepath}", err=True)
         return None
-        
-    if not filepath.lower().endswith('.tcx'):
-        click.echo(f"Warning: File {filepath} is not a TCX file, but will attempt upload anyway")
+
+    # Determine Strava upload data_type based on extension.
+    # Strava supports: tcx, gpx, fit (and .gz variants).
+    filepath_lower = filepath.lower()
+    if filepath_lower.endswith(".tcx.gz"):
+        data_type = "tcx.gz"
+        name_suffix = ".tcx.gz"
+    elif filepath_lower.endswith(".gpx.gz"):
+        data_type = "gpx.gz"
+        name_suffix = ".gpx.gz"
+    elif filepath_lower.endswith(".fit.gz"):
+        data_type = "fit.gz"
+        name_suffix = ".fit.gz"
+    else:
+        ext = os.path.splitext(filepath_lower)[1].lstrip(".")
+        supported = {"tcx", "gpx", "fit"}
+        if ext in supported:
+            data_type = ext
+            name_suffix = f".{ext}"
+        else:
+            data_type = ext or "tcx"
+            name_suffix = os.path.splitext(os.path.basename(filepath))[1]
+            click.echo(
+                f"Warning: File {filepath} has an unsupported extension; will attempt upload with data_type='{data_type}'"
+            )
     
     # Extract activity name from filename
     filename = os.path.basename(filepath)
     # Remove extension and replace underscores with spaces for better readability
-    activity_name = os.path.splitext(filename)[0].replace('_', ' ')
+    if name_suffix and filename.lower().endswith(name_suffix):
+        base_name = filename[: -len(name_suffix)]
+    else:
+        base_name = os.path.splitext(filename)[0]
+    activity_name = base_name.replace("_", " ")
     
     if dry_run:
-        click.echo(f"[DRY RUN] Would upload file: {filepath} as '{activity_name}'")
+        click.echo(
+            f"[DRY RUN] Would upload file: {filepath} as '{activity_name}' (data_type='{data_type}')"
+        )
         return filepath
     
     try:
@@ -108,9 +136,9 @@ def upload_file_to_strava(filepath, dry_run=False, max_attempts=3):
         
         upload = strava.upload_activity(
             activity_file=activity_data,
-            data_type="tcx",
+            data_type=data_type,
             name=activity_name,
-            description=f"Uploaded from local file with https://bit.ly/garmin2strava",
+            description="Uploaded from local file with https://bit.ly/garmin2strava",
         )
         
         # Wait for the upload to complete and get the activity ID
@@ -158,7 +186,7 @@ def sync_activity(garmin, activity, dry_run=False, max_attempts=3):
         activity_file=activity_data,
         data_type="tcx",
         name=activity.get("activityName", "Garmin Activity"),
-        description=f"Synced from Garmin Connect with https://bit.ly/garmin2strava",
+        description="Synced from Garmin Connect with https://bit.ly/garmin2strava",
     )
 
     # Wait for the upload to complete and get the activity ID
@@ -279,7 +307,7 @@ def download(limit, output_dir):
                     # Parse start time to get date part
                     date_part = start_time.split('T')[0] if 'T' in start_time else start_time.split(' ')[0]
                     filename = f"{date_part}_{safe_name}_{activity_id}.tcx"
-                except:
+                except Exception:
                     filename = f"{safe_name}_{activity_id}.tcx"
             else:
                 filename = f"{safe_name}_{activity_id}.tcx"
@@ -308,7 +336,7 @@ def download(limit, output_dir):
 @click.argument('files', nargs=-1, required=True)
 @click.option("--dry-run", is_flag=True, help="Show what would be uploaded but don't actually upload")
 def upload(files, dry_run):
-    """Upload TCX activity files to Strava."""
+    """Upload activity files (TCX/GPX/FIT, optionally gzipped) to Strava."""
     if not files:
         click.echo("Error: No files specified", err=True)
         return
@@ -334,7 +362,7 @@ def upload(files, dry_run):
             failed_uploads += 1
             click.echo(f"Failed to upload: {filepath}")
     
-    click.echo(f"\nUpload summary:")
+    click.echo("\nUpload summary:")
     if dry_run:
         click.echo(f"[DRY RUN] Would upload {successful_uploads} files")
         if failed_uploads > 0:
