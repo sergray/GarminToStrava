@@ -33,7 +33,7 @@ uv sync
 
 Run the sync command:
 ```bash
-uv run garmin2strava.py
+uv run g2s
 ```
 
 The tool will:

@@ -15,10 +15,19 @@ dependencies = [
     "questionary",
 ]
 
+[project.scripts]
+garmin2strava = "garmin2strava:cli"
+g2s = "garmin2strava:cli"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["garmin2strava"]
+
 [dependency-groups]
 dev = [
     "ipdb>=0.13.13",
 ]
 
-[project.scripts]
-g2s = "garmin2strava:sync"
