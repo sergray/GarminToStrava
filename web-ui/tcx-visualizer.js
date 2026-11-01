@@ -16,6 +16,7 @@ class TCXVisualizer {
             'Walking': '#2ecc71',
             'Swimming': '#1abc9c',
             'Open Water Swimming': '#1abc9c',
+            'Inline Skating': '#f39c12',
             'Other': '#9b59b6'
         };
         this.activityIcons = {
@@ -25,6 +26,7 @@ class TCXVisualizer {
             'Walking': 'fa-walking',
             'Swimming': 'fa-swimmer',
             'Open Water Swimming': 'fa-swimmer',
+            'Inline Skating': 'fa-person-skating',
             'Other': 'fa-dumbbell'
         };
         
@@ -262,7 +264,7 @@ class TCXVisualizer {
             filename,
             name: name || filename.replace(/\.gpx$/i, ''),
             format: 'GPX',
-            sport: this.normalizeSport(type),
+            sport: this.normalizeSport(type, `${name} ${filename}`),
             id,
             startTime: id ? new Date(id) : null,
             duration: this.formatDuration(totalTime),
@@ -346,7 +348,7 @@ class TCXVisualizer {
         }
 
         // Extract activity metadata
-        const sport = activityData['@_Sport'] || 'Other';
+        const sport = this.normalizeSport(activityData['@_Sport'], filename);
         const id = activityData.Id || '';
         const laps = Array.isArray(activityData.Lap) ? activityData.Lap : [activityData.Lap];
 
@@ -422,14 +424,21 @@ class TCXVisualizer {
         return Number.isFinite(number) ? number : null;
     }
 
-    normalizeSport(value) {
-        const sport = (value || '').toLowerCase();
+    normalizeSport(value, fallback = '') {
+        const classify = candidate => {
+            const sport = (candidate || '').toLowerCase().replace(/[_-]+/g, ' ');
 
-        if (sport.includes('run') || sport.includes('jog')) return 'Running';
-        if (sport.includes('cycl') || sport.includes('bik')) return 'Cycling';
-        if (sport.includes('walk') || sport.includes('hik')) return 'Walking';
-        if (sport.includes('swim')) return 'Swimming';
-        return 'Other';
+            if ((sport.includes('inline') && sport.includes('skat'))
+                || sport.includes('rollerblad')
+                || sport.includes('roller skat')) return 'Inline Skating';
+            if (sport.includes('run') || sport.includes('jog')) return 'Running';
+            if (sport.includes('cycl') || sport.includes('bik')) return 'Cycling';
+            if (sport.includes('walk') || sport.includes('hik')) return 'Walking';
+            if (sport.includes('swim')) return 'Swimming';
+            return null;
+        };
+
+        return classify(value) || classify(fallback) || 'Other';
     }
 
     distanceBetween(first, second) {

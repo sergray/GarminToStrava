@@ -12,6 +12,7 @@ A browser-based application for visualizing multiple TCX (Training Center XML) a
   - 🚴 Cycling (Blue) 
   - 🚶 Walking (Green)
   - 🏊 Swimming (Teal)
+  - 🛼 Inline Skating (Orange)
   - 💪 Other activities (Purple)
 - **Interactive Map**: Pan, zoom, and explore your activities on an OpenStreetMap
 - **Drag & Drop**: Drag TCX or GPX files onto the page to upload
@@ -57,7 +58,7 @@ Then open `http://localhost:8080` in your browser.
 - **GPX files** (`.gpx`) - GPX tracks and routes, including names, activity types, timestamps, elevation, and heart rate extensions
 - The application parses:
   - GPS coordinates (latitude/longitude)
-  - Activity types (Running, Cycling, Walking, Swimming, etc.)
+  - Activity types (Running, Cycling, Walking, Swimming, Inline Skating, etc.)
   - Timestamps and duration
   - Distance and elevation data
   - Heart rate data (if available)
@@ -111,6 +112,7 @@ The visualizer automatically recognizes these activity types from TCX metadata a
 | Cycling/Biking | Blue (#3498db) | 🚴 |
 | Walking | Green (#2ecc71) | 🚶 |
 | Swimming | Teal (#1abc9c) | 🏊 |
+| Inline Skating | Orange (#f39c12) | 🛼 |
 | Other | Purple (#9b59b6) | 💪 |
 
 ## 🐛 Troubleshooting

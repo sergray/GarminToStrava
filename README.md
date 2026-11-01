@@ -51,7 +51,7 @@ A browser-based application for visualizing multiple TCX and GPX activity files 
 #### Features
 - 🗺️ **Interactive Map**: Visualize activities on OpenStreetMap
 - 📁 **Multiple Files**: Upload and display mixed TCX and GPX files simultaneously
-- 🎨 **Activity Types**: Color-coded activities (Running, Cycling, Walking, Swimming)
+- 🎨 **Activity Types**: Color-coded activities (Running, Cycling, Walking, Swimming, Inline Skating)
 - 🔒 **Privacy First**: All processing happens locally in your browser
 - 📱 **Responsive**: Works on desktop and mobile devices
 
@@ -117,6 +117,7 @@ Both tools support these activity types:
 - 🚴 **Cycling/Biking**
 - 🚶 **Walking**
 - 🏊 **Swimming** (including Open Water)
+- 🛼 **Inline Skating**
 - 💪 **Other activities**
 
 ## 🔧 Development
