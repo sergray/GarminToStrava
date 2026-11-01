@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCX Activity Visualizer</title>
+    <title>GPS Activity Visualizer</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -270,8 +270,8 @@
     <div class="container">
         <div class="sidebar">
             <div class="header">
-                <h1><i class="fas fa-map-marked-alt"></i> TCX Visualizer</h1>
-                <p>Upload and visualize your Garmin TCX activity files</p>
+                <h1><i class="fas fa-map-marked-alt"></i> Activity Visualizer</h1>
+                <p>Upload and visualize TCX and GPX activity files</p>
             </div>
 
             <div class="upload-section">
@@ -279,9 +279,9 @@
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <p><strong>Drop TCX files here</strong></p>
-                    <p>or <button class="btn" onclick="document.getElementById('fileInput').click()">Browse Files</button></p>
-                    <input type="file" id="fileInput" class="file-input" multiple accept=".tcx" />
+                    <p><strong>Drop TCX or GPX files here</strong></p>
+                    <p>or <button class="btn" id="browseButton" type="button">Browse Files</button></p>
+                    <input type="file" id="fileInput" class="file-input" multiple accept=".tcx,.gpx,application/gpx+xml" />
                 </div>
             </div>
 
@@ -338,7 +338,7 @@
                 <div class="activity-list" id="activityList">
                     <div class="loading" id="emptyState">
                         <i class="fas fa-info-circle"></i>
-                        <p>Upload TCX files to get started</p>
+                        <p>Upload TCX or GPX files to get started</p>
                     </div>
                 </div>
             </div>
@@ -355,7 +355,7 @@
     <!-- Leaflet Awesome Markers JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
 
-    <!-- Fast XML Parser for TCX parsing -->
+    <!-- Fast XML Parser for activity file parsing -->
     <script src="https://cdn.jsdelivr.net/npm/fast-xml-parser@4.3.2/dist/fxp.min.js"></script>
 
     <script src="tcx-visualizer.js"></script>

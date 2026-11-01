@@ -1,12 +1,12 @@
-# TCX Activity Visualizer
+# GPS Activity Visualizer
 
-A beautiful, interactive web application for visualizing multiple TCX (Training Center XML) activity files on a map. Perfect for analyzing and comparing your Garmin GPS activities across different sports.
+A browser-based application for visualizing multiple TCX (Training Center XML) and GPX (GPS Exchange Format) activity files on a map.
 
 ![TCX Visualizer Screenshot](https://img.shields.io/badge/Activity-Visualizer-blue)
 
 ## 🌟 Features
 
-- **Multiple File Support**: Upload and visualize multiple TCX files simultaneously
+- **Multiple File Support**: Upload and visualize multiple TCX and GPX files simultaneously, including a mix of both formats
 - **Activity Type Recognition**: Automatically detects and color-codes different activity types:
   - 🏃 Running (Red)
   - 🚴 Cycling (Blue) 
@@ -14,7 +14,7 @@ A beautiful, interactive web application for visualizing multiple TCX (Training 
   - 🏊 Swimming (Teal)
   - 💪 Other activities (Purple)
 - **Interactive Map**: Pan, zoom, and explore your activities on an OpenStreetMap
-- **Drag & Drop**: Simply drag TCX files onto the page to upload
+- **Drag & Drop**: Drag TCX or GPX files onto the page to upload
 - **Activity Management**: Toggle visibility, focus on specific activities, or remove them
 - **Statistics Dashboard**: View total distance, time, and activity counts
 - **Responsive Design**: Works on desktop and mobile devices
@@ -30,7 +30,7 @@ A beautiful, interactive web application for visualizing multiple TCX (Training 
 
 2. Open `index.html` in any modern web browser
 
-3. Upload your TCX files by:
+3. Upload your TCX or GPX files by:
    - Dragging and dropping them onto the upload area
    - Or clicking "Browse Files" to select them
 
@@ -53,8 +53,9 @@ Then open `http://localhost:8080` in your browser.
 
 ## 📁 Supported File Formats
 
-- **TCX files** (`.tcx`) - Primary format from Garmin devices and Garmin Connect
-- The application specifically parses:
+- **TCX files** (`.tcx`) - Training Center XML exported by Garmin and other fitness services
+- **GPX files** (`.gpx`) - GPX tracks and routes, including names, activity types, timestamps, elevation, and heart rate extensions
+- The application parses:
   - GPS coordinates (latitude/longitude)
   - Activity types (Running, Cycling, Walking, Swimming, etc.)
   - Timestamps and duration
@@ -63,7 +64,7 @@ Then open `http://localhost:8080` in your browser.
 
 ## 🎮 How to Use
 
-1. **Upload Files**: Drag TCX files onto the upload area or use the browse button
+1. **Upload Files**: Drag TCX or GPX files onto the upload area or use the browse button
 2. **View Activities**: Each activity appears as a colored track on the map with a start marker
 3. **Interact with Activities**:
    - Click markers for detailed information
@@ -76,7 +77,7 @@ Then open `http://localhost:8080` in your browser.
 
 ### Architecture
 - **Frontend Only**: Pure HTML, CSS, and JavaScript - no backend required
-- **TCX Parsing**: Custom XML parser handles TCX file structure
+- **Activity Parsing**: Local XML parsers handle TCX activities and GPX tracks or routes
 - **Mapping**: Uses Leaflet.js for interactive maps
 - **Icons**: Font Awesome icons for activity types
 - **Styling**: Modern, responsive CSS with a clean interface
@@ -102,7 +103,7 @@ Your privacy is important:
 
 ## 🔄 Supported Activity Types
 
-The visualizer automatically recognizes these activity types from TCX files:
+The visualizer automatically recognizes these activity types from TCX metadata and GPX track types:
 
 | Activity Type | Color | Icon |
 |---------------|-------|------|
@@ -115,12 +116,12 @@ The visualizer automatically recognizes these activity types from TCX files:
 ## 🐛 Troubleshooting
 
 ### Files won't upload
-- Ensure files have `.tcx` extension
-- Check that files are valid TCX format (not corrupted)
+- Ensure files have a `.tcx` or `.gpx` extension
+- Check that files contain valid XML for the selected format
 - Try refreshing the page and uploading again
 
 ### Activities don't appear on map
-- Verify the TCX files contain GPS coordinates
+- Verify the activity files contain GPS coordinates
 - Some indoor activities may not have location data
 - Check browser console for error messages
 
@@ -129,7 +130,7 @@ The visualizer automatically recognizes these activity types from TCX files:
 - Try refreshing the page
 - Check if browser is blocking JavaScript
 
-## 🎯 Exporting TCX Files
+## 🎯 Exporting Activity Files
 
 ### From Garmin Connect
 1. Go to Garmin Connect website
@@ -160,7 +161,7 @@ cd GarminToStrava/web-ui
 ### Adding New Features
 The code is modular and well-commented. Key areas for extension:
 - `activityColors` and `activityIcons` objects for new activity types
-- `parseTCX()` method for additional data parsing
+- `parseTCX()` and `parseGPX()` methods for additional data parsing
 - `addActivityToMap()` for new visualization features
 
 ## 📜 License
@@ -180,7 +181,8 @@ Contributions are welcome! Feel free to:
 - **Leaflet** - Amazing open-source mapping library
 - **OpenStreetMap** - Free, editable map of the world
 - **Font Awesome** - Beautiful icon library
-- **Garmin** - For the TCX file format specification
+- **Garmin** - For the TCX file format
+- **GPX** - For the open GPS Exchange Format
 
 ---
 

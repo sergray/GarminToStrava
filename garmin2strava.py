@@ -18,12 +18,17 @@ load_dotenv()
 
 
 def get_garmin_client():
-    """Initialize and authenticate Garmin Connect client."""
+    """Initialize and authenticate Garmin Connect client.
+
+    Attempts to reuse persisted tokens from GARMINTOKENS path (default ~/.garth)
+    and only performs credential login when no valid token is available.
+    """
+    tokenstore = os.getenv("GARMINTOKENS", "~/.garth")
     try:
         client = Garmin(
             email=os.getenv("GARMIN_EMAIL"), password=os.getenv("GARMIN_PASSWORD")
         )
-        client.login()
+        client.login(tokenstore=tokenstore)
         return client
     except Exception as e:
         click.echo(f"Error connecting to Garmin: {str(e)}", err=True)
@@ -323,7 +328,7 @@ def download(limit, output_dir):
             with open(filepath, 'wb') as f:
                 f.write(activity_data)
             
-            click.echo(f"Downloaded: {filename}")
+            click.echo(f"Downloaded: {filepath}")
 
         click.echo(f"Successfully downloaded {len(selected_activities)} activities to {output_dir}")
 

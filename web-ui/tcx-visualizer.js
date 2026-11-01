@@ -1,6 +1,6 @@
 /**
- * TCX Activity Visualizer
- * A web application for visualizing multiple TCX activity files on an interactive map
+ * GPS Activity Visualizer
+ * A web application for visualizing multiple TCX and GPX activity files
  */
 
 class TCXVisualizer {
@@ -119,20 +119,20 @@ class TCXVisualizer {
     }
 
     async handleFiles(files) {
-        const tcxFiles = Array.from(files).filter(file => 
-            file.name.toLowerCase().endsWith('.tcx')
+        const activityFiles = Array.from(files).filter(file =>
+            /\.(tcx|gpx)$/i.test(file.name)
         );
 
-        if (tcxFiles.length === 0) {
-            this.showError('Please select TCX files only.');
+        if (activityFiles.length === 0) {
+            this.showError('Please select TCX or GPX files.');
             return;
         }
 
         this.showLoading(true);
 
-        for (const file of tcxFiles) {
+        for (const file of activityFiles) {
             try {
-                await this.processTCXFile(file);
+                await this.processActivityFile(file);
             } catch (error) {
                 console.error(`Error processing ${file.name}:`, error);
                 this.showError(`Error processing ${file.name}: ${error.message}`);
@@ -144,14 +144,16 @@ class TCXVisualizer {
         this.fitMapToBounds();
     }
 
-    async processTCXFile(file) {
+    async processActivityFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             
             reader.onload = (e) => {
                 try {
-                    const tcxContent = e.target.result;
-                    const activity = this.parseTCX(tcxContent, file.name);
+                    const content = e.target.result;
+                    const activity = file.name.toLowerCase().endsWith('.gpx')
+                        ? this.parseGPX(content, file.name)
+                        : this.parseTCX(content, file.name);
                     
                     if (activity && activity.trackpoints.length > 0) {
                         const activityId = this.generateActivityId();
@@ -169,6 +171,108 @@ class TCXVisualizer {
             reader.onerror = () => reject(new Error('Failed to read file'));
             reader.readAsText(file);
         });
+    }
+
+    parseGPX(gpxContent, filename) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(gpxContent, 'text/xml');
+        const parseError = xmlDoc.querySelector('parsererror');
+
+        if (parseError) {
+            throw new Error('Invalid GPX XML');
+        }
+
+        const tracks = Array.from(xmlDoc.getElementsByTagNameNS('*', 'trk'));
+        const routes = Array.from(xmlDoc.getElementsByTagNameNS('*', 'rte'));
+        const containers = tracks.length > 0 ? tracks : routes;
+        const pointTag = tracks.length > 0 ? 'trkpt' : 'rtept';
+
+        if (containers.length === 0) {
+            throw new Error('No tracks or routes found in GPX file');
+        }
+
+        const trackpoints = [];
+        let totalDistance = 0;
+        let totalTime = 0;
+
+        for (const container of containers) {
+            const segments = pointTag === 'trkpt'
+                ? Array.from(container.getElementsByTagNameNS('*', 'trkseg'))
+                : [container];
+            const pointGroups = segments.length > 0 ? segments : [container];
+
+            for (const group of pointGroups) {
+                const points = Array.from(group.getElementsByTagNameNS('*', pointTag));
+                let previousPoint = null;
+                let firstTime = null;
+                let lastTime = null;
+
+                for (const point of points) {
+                    const lat = Number.parseFloat(point.getAttribute('lat'));
+                    const lng = Number.parseFloat(point.getAttribute('lon'));
+
+                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                        continue;
+                    }
+
+                    const timeText = this.getFirstElementText(point, 'time');
+                    const time = timeText ? new Date(timeText) : null;
+                    const trackpoint = {
+                        lat,
+                        lng,
+                        time: timeText || '',
+                        altitude: this.parseOptionalNumber(this.getFirstElementText(point, 'ele')),
+                        distance: null,
+                        heartRate: this.parseOptionalNumber(this.getFirstElementText(point, 'hr'))
+                    };
+
+                    if (previousPoint) {
+                        totalDistance += this.distanceBetween(previousPoint, trackpoint);
+                    }
+                    previousPoint = trackpoint;
+                    trackpoints.push(trackpoint);
+
+                    if (time && !Number.isNaN(time.getTime())) {
+                        if (!firstTime) firstTime = time;
+                        lastTime = time;
+                    }
+                }
+
+                if (firstTime && lastTime) {
+                    totalTime += Math.max(0, (lastTime - firstTime) / 1000);
+                }
+            }
+        }
+
+        if (trackpoints.length === 0) {
+            throw new Error('No valid trackpoints found in GPX file');
+        }
+
+        const primaryContainer = containers[0];
+        const type = this.getDirectChildText(primaryContainer, 'type');
+        const name = this.getDirectChildText(primaryContainer, 'name');
+        const firstTimedPoint = trackpoints.find(point => point.time);
+        const firstPointTime = firstTimedPoint ? firstTimedPoint.time : '';
+        const metadata = xmlDoc.getElementsByTagNameNS('*', 'metadata')[0];
+        const metadataTime = metadata ? this.getDirectChildText(metadata, 'time') : '';
+        const id = firstPointTime || metadataTime || '';
+        const distance = this.formatDistance(totalDistance);
+
+        return {
+            filename,
+            name: name || filename.replace(/\.gpx$/i, ''),
+            format: 'GPX',
+            sport: this.normalizeSport(type),
+            id,
+            startTime: id ? new Date(id) : null,
+            duration: this.formatDuration(totalTime),
+            distance: distance.value,
+            distanceUnit: distance.unit,
+            trackpoints,
+            totalDistance,
+            totalTime,
+            bounds: this.calculateBounds(trackpoints)
+        };
     }
 
     parseTCX(tcxContent, filename) {
@@ -287,9 +391,11 @@ class TCXVisualizer {
 
         return {
             filename,
+            name: filename.replace(/\.tcx$/i, ''),
+            format: 'TCX',
             sport,
             id,
-            startTime,
+            startTime: Number.isNaN(startTime.getTime()) ? null : startTime,
             duration,
             distance: distance.value,
             distanceUnit: distance.unit,
@@ -298,6 +404,45 @@ class TCXVisualizer {
             totalTime,
             bounds: this.calculateBounds(trackpoints)
         };
+    }
+
+    getFirstElementText(element, localName) {
+        const match = element.getElementsByTagNameNS('*', localName)[0];
+        return match ? match.textContent.trim() : '';
+    }
+
+    getDirectChildText(element, localName) {
+        const match = Array.from(element.children).find(child => child.localName === localName);
+        return match ? match.textContent.trim() : '';
+    }
+
+    parseOptionalNumber(value) {
+        if (value === '') return null;
+        const number = Number.parseFloat(value);
+        return Number.isFinite(number) ? number : null;
+    }
+
+    normalizeSport(value) {
+        const sport = (value || '').toLowerCase();
+
+        if (sport.includes('run') || sport.includes('jog')) return 'Running';
+        if (sport.includes('cycl') || sport.includes('bik')) return 'Cycling';
+        if (sport.includes('walk') || sport.includes('hik')) return 'Walking';
+        if (sport.includes('swim')) return 'Swimming';
+        return 'Other';
+    }
+
+    distanceBetween(first, second) {
+        const earthRadius = 6371000;
+        const toRadians = degrees => degrees * Math.PI / 180;
+        const lat1 = toRadians(first.lat);
+        const lat2 = toRadians(second.lat);
+        const deltaLat = toRadians(second.lat - first.lat);
+        const deltaLng = toRadians(second.lng - first.lng);
+        const a = Math.sin(deltaLat / 2) ** 2
+            + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+
+        return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     addActivityToMap(activityId, activity) {
@@ -331,8 +476,9 @@ class TCXVisualizer {
                 <h3 style="margin: 0 0 10px 0; color: ${color};">
                     <i class="fas ${icon}"></i> ${activity.sport}
                 </h3>
-                <p><strong>File:</strong> ${activity.filename}</p>
-                <p><strong>Date:</strong> ${activity.startTime.toLocaleDateString()}</p>
+                <p><strong>File:</strong> ${this.escapeHTML(activity.filename)}</p>
+                <p><strong>Format:</strong> ${activity.format}</p>
+                <p><strong>Date:</strong> ${this.formatDate(activity.startTime)}</p>
                 <p><strong>Distance:</strong> ${activity.distance} ${activity.distanceUnit}</p>
                 <p><strong>Duration:</strong> ${activity.duration}</p>
                 <p><strong>Points:</strong> ${activity.trackpoints.length}</p>
@@ -403,8 +549,8 @@ class TCXVisualizer {
                     <i class="fas ${icon}"></i>
                 </div>
                 <div class="activity-info">
-                    <div class="activity-name">${activity.sport}</div>
-                    <div class="activity-details">${activity.startTime.toLocaleDateString()} • ${activity.distance} ${activity.distanceUnit}</div>
+                    <div class="activity-name">${this.escapeHTML(activity.name || activity.sport)}</div>
+                    <div class="activity-details">${activity.format} • ${this.formatDate(activity.startTime)} • ${activity.distance} ${activity.distanceUnit}</div>
                 </div>
             </div>
             <div class="activity-controls">
@@ -575,6 +721,16 @@ class TCXVisualizer {
         } else {
             return `${minutes}:${secs.toString().padStart(2, '0')}`;
         }
+    }
+
+    formatDate(date) {
+        return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : 'Unknown date';
+    }
+
+    escapeHTML(value) {
+        const element = document.createElement('div');
+        element.textContent = String(value);
+        return element.innerHTML;
     }
 
     showLoading(show) {

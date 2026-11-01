@@ -1,6 +1,6 @@
 # Garmin to Strava Tools
 
-A collection of tools for working with Garmin activity data, including a command-line sync tool and a web-based TCX visualizer.
+A collection of tools for working with Garmin activity data, including a command-line sync tool and a web-based TCX/GPX visualizer.
 
 ## 🛠 Tools Included
 
@@ -42,15 +42,15 @@ The tool will:
 3. Upload it to Strava
 4. Automatically handle token refresh when needed
 
-### 2. Web UI - TCX Activity Visualizer
+### 2. Web UI - GPS Activity Visualizer
 
-A beautiful, interactive web application for visualizing multiple TCX activity files on a map with distinctive colors and icons for each activity type.
+A browser-based application for visualizing multiple TCX and GPX activity files on a map with distinctive colors and icons for each activity type.
 
 ![TCX Visualizer](https://img.shields.io/badge/Web-Visualizer-blue)
 
 #### Features
 - 🗺️ **Interactive Map**: Visualize activities on OpenStreetMap
-- 📁 **Multiple Files**: Upload and display multiple TCX files simultaneously
+- 📁 **Multiple Files**: Upload and display mixed TCX and GPX files simultaneously
 - 🎨 **Activity Types**: Color-coded activities (Running, Cycling, Walking, Swimming)
 - 🔒 **Privacy First**: All processing happens locally in your browser
 - 📱 **Responsive**: Works on desktop and mobile devices
@@ -68,7 +68,7 @@ python -m http.server 8080
 open http://localhost:8080
 ```
 
-Then drag and drop your TCX files from the `downloads/` folder onto the web page!
+Then drag and drop TCX or GPX files onto the web page.
 
 📖 **[Full Web UI Documentation →](web-ui/README.md)**
 
@@ -84,7 +84,7 @@ GarminToStrava/
 │   ├── 2025-07-26_Running_*.tcx
 │   ├── 2025-07-26_Cycling_*.tcx
 │   └── ...
-└── 📂 web-ui/                     # Web-based TCX visualizer
+└── 📂 web-ui/                     # Web-based TCX/GPX visualizer
     ├── 🌐 index.html              # Web application
     ├── ⚡ tcx-visualizer.js       # JavaScript application
     └── 📖 README.md               # Web UI documentationÌ
@@ -101,7 +101,7 @@ GarminToStrava/
 ### For Activity Visualization (Web UI)
 1. Navigate to `web-ui/` directory
 2. Open `index.html` in a browser OR start a local server
-3. Upload your TCX files and explore!
+3. Upload your TCX or GPX files and explore!
 
 ## 🎯 Use Cases
 
